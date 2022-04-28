@@ -45,8 +45,8 @@ ifeq ($(PKG_VERSION),10.2.0)
   PKG_HASH:=b8dd4368bb9c7f0b98188317ee0254dd8cc99d1e3a18d0ff146c855fe16c1d8c
 endif
 
-ifeq ($(PKG_VERSION),11.2.0)
-  PKG_HASH:=d08edc536b54c372a1010ff6619dd274c0f1603aa49212ba20f7aa2cda36fa8b
+ifeq ($(PKG_VERSION),11.3.0)
+  PKG_HASH:=b47cf2818691f5b1e21df2bb38c795fac2cfbd640ede2d0a5e1c89e338a3ac39
 endif
 
 PATCH_DIR=../patches/$(GCC_VERSION)
