@@ -66,7 +66,18 @@ CONFIGURE_ARGS += \
 	--disable-debuginfod \
 	--without-lzma
 
-TARGET_CFLAGS += -D_GNU_SOURCE -Wno-unused-result -Wno-format-nonliteral
+CONFIGURE_VARS += \
+	ac_cv_search__obstack_free=yes
+
+TARGET_CFLAGS += \
+	-D_GNU_SOURCE \
+	-Wno-unused-result \
+	-Wno-format-nonliteral
+
+ifneq ($(CONFIG_GCC_USE_VERSION_11),y)
+TARGET_CFLAGS += \
+	-Wno-error=use-after-free
+endif
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
