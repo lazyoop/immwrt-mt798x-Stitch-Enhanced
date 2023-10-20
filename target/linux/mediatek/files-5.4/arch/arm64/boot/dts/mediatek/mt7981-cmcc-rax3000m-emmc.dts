@@ -14,7 +14,7 @@
 
 &mmc0 {
 	bus-width = <8>;
-	max-frequency = <26000000>;
+	max-frequency = <52000000>;
 	no-sd;
 	no-sdio;
 	non-removable;
