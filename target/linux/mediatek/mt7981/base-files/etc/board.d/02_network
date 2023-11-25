@@ -22,6 +22,7 @@ mediatek_setup_interfaces()
 	*2500wan-p5*)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" wan
 		;;
+	xiaomi,mi-router-ax3000t* |\
 	xiaomi,mi-router-wr30u*)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		ucidef_add_switch "switch0" \
@@ -38,7 +39,9 @@ mediatek_setup_interfaces()
 			"0:lan" "1:lan" "2:lan" "3:wan" "6t@eth0"
 		;;
 	*clt,r30b1* |\
-	*imou,lc-hx3001*)
+	h3c,nx30pro |\
+	*imou,lc-hx3001* |\
+	*konka,komi-a31*)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "6u@eth0"
@@ -54,12 +57,6 @@ mediatek_setup_interfaces()
 			"1:lan" "2:lan" "3:lan" "0:wan" "6t@eth0"
 		;;
 	abt,asr3000 |\
-	h3c,nx30pro |\
-	*konka,komi-a31*)
-		ucidef_set_interfaces_lan_wan "eth0" "eth1"
-		ucidef_add_switch "switch0" \
-			"0:lan" "1:lan" "2:lan" "6u@eth0"
-		;;
 	*rax3000m*)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		ucidef_add_switch "switch0" \
@@ -150,6 +147,7 @@ mediatek_setup_macs()
 			mtk_facrory_write_mac Factory 4 "$wifi_mac"
 		fi
 		;;
+	xiaomi,mi-router-ax3000t* |\
 	xiaomi,mi-router-wr30u*)
 		wan_mac=$(mtd_get_mac_ascii Bdata ethaddr_wan)
 		lan_mac=$(mtd_get_mac_ascii Bdata ethaddr)
@@ -172,7 +170,6 @@ mediatek_setup_macs()
 		label_mac=$(mtd_get_mac_ascii art MAC_ADDRESS)
 		lan_mac=$label_mac
 		wan_mac=$label_mac
-
 		local wifi_mac="$(macaddr_add $label_mac 1)"
 		mtk_facrory_write_mac Factory 4 "$wifi_mac"
 		;;
@@ -182,6 +179,12 @@ mediatek_setup_macs()
 		label_mac=$lan_mac
 		local wifi_mac="$(macaddr_add $lan_mac 1)"
 		mtk_facrory_write_mac Factory 4 "$wifi_mac"
+		;;
+	*clt,r30b1*)
+		lan_mac=$(mtd_get_mac_binary $part_name 0x2A)
+		wan_mac=$(mtd_get_mac_binary $part_name 0x24)
+		label_mac=$lan_mac
+		local wifi_mac="$(mtd_get_mac_binary $part_name 0x04)"
 		;;
 	cmcc,rax3000m-emmc)
 		lan_mac=$(mmc_get_mac_binary factory 0x24)
@@ -219,7 +222,6 @@ mediatek_setup_macs()
 		fi
 		;;
 	*cmcc,a10* |\
-	*clt,r30b1* |\
 	*konka,komi-a31*)
 		lan_mac=$(mtd_get_mac_binary $part_name 0x2A)
 		wan_mac=$(mtd_get_mac_binary $part_name 0x24)
