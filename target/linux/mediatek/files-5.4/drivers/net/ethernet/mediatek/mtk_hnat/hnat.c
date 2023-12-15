@@ -142,14 +142,21 @@ void set_gmac_ppe_fwd(int id, int enable)
 	reg = hnat_priv->fe_base + (id ? GDMA2_FWD_CFG : GDMA1_FWD_CFG);
 
 	if (enable) {
-		cr_set_bits(reg, BITS_GDM_ALL_FRC_P_PPE);
-
+		if (id == 0)
+ 			cr_set_bits(reg, BITS_GDM_ALL_FRC_P_PPE);
+ 		else {
+ 			if(CFG_PPE_NUM>1)
+ 				cr_set_bits(reg, BITS_GDM_ALL_FRC_P_PPE1);
+ 			else
+ 				cr_set_bits(reg, BITS_GDM_ALL_FRC_P_PPE);
+			} 
 		return;
 	}
 
 	/*disabled */
 	val = readl(reg);
-	if ((val & GDM_ALL_FRC_MASK) == BITS_GDM_ALL_FRC_P_PPE)
+	if (((val & GDM_ALL_FRC_MASK) == BITS_GDM_ALL_FRC_P_PPE ||
+ 	     (val & GDM_ALL_FRC_MASK) == BITS_GDM_ALL_FRC_P_PPE1))
 		cr_set_field(reg, GDM_ALL_FRC_MASK,
 			     BITS_GDM_ALL_FRC_P_CPU_PDMA);
 }
@@ -748,10 +755,11 @@ static int hnat_probe(struct platform_device *pdev)
 #else
 	hnat_priv->ppe_base[0] = hnat_priv->fe_base + 0xe00;
 #endif
-
+	hnat_priv->nf_stat_en = true; /* enable nf_stat_en by default */
 	hnat_priv->ipv6_en = true; /* enable ipv6 by default */
 	hnat_priv->guest_en = true; /* enable guest wifi by default */
-
+	hnat_priv->dscp_en = false;
+	hnat_priv->macvlan_support = false;
 	err = hnat_init_debugfs(hnat_priv);
 	if (err)
 		return err;

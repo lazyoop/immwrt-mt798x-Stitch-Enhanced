@@ -611,6 +611,7 @@ struct foe_entry {
 #define MAX_PPE_NUM		1
 #endif
 #define CFG_PPE_NUM		(hnat_priv->ppe_num)
+#define HNAT_EXCEPTION_TAG	0x99
 
 struct mib_entry {
 	u32 byt_cnt_l;
@@ -683,6 +684,8 @@ struct mtk_hnat {
 	bool nf_stat_en;
 	bool ipv6_en;
 	bool guest_en;
+	bool dscp_en;
+	bool macvlan_support;
 };
 
 struct extdev_entry {
@@ -764,6 +767,15 @@ enum FoeIpAct {
 #define BITS_GDM_ALL_FRC_P_PPE                                              \
 	(BITS_GDM_UFRC_P_PPE | BITS_GDM_BFRC_P_PPE | BITS_GDM_MFRC_P_PPE |  \
 	 BITS_GDM_OFRC_P_PPE)
+	 
+#define BITS_GDM_UFRC_P_PPE1 (NR_PPE1_PORT << 12)
+#define BITS_GDM_BFRC_P_PPE1 (NR_PPE1_PORT << 8)
+#define BITS_GDM_MFRC_P_PPE1 (NR_PPE1_PORT << 4)
+#define BITS_GDM_OFRC_P_PPE1 (NR_PPE1_PORT << 0)
+#define BITS_GDM_ALL_FRC_P_PPE1					\
+ 	(BITS_GDM_UFRC_P_PPE1 | BITS_GDM_BFRC_P_PPE1 |		\
+ 	 BITS_GDM_MFRC_P_PPE1 | BITS_GDM_OFRC_P_PPE1)
+
 
 #define BITS_GDM_UFRC_P_CPU_PDMA (NR_PDMA_PORT << 12)
 #define BITS_GDM_BFRC_P_CPU_PDMA (NR_PDMA_PORT << 8)
@@ -842,8 +854,9 @@ enum FoeIpAct {
 #define NR_WDMA1_PORT 9
 #define LAN_DEV_NAME hnat_priv->lan
 #define IS_WAN(dev)                                                            \
-	(!strncmp((dev)->name, hnat_priv->wan, strlen(hnat_priv->wan)))
-#define IS_LAN(dev) (!strncmp(dev->name, LAN_DEV_NAME, strlen(LAN_DEV_NAME)))
+	((!strncmp((dev)->name, hnat_priv->wan, strlen(hnat_priv->wan))) || ((!strncmp((dev)->name, "macvlan", 7)) && \
+		(hnat_priv->macvlan_support)))
+#define IS_LAN(dev) (!strncmp(dev->name, LAN_DEV_NAME, strlen(LAN_DEV_NAME))) 
 #define IS_BR(dev) (!strncmp(dev->name, "br", 2))
 #define IS_WHNAT(dev)								\
 	((hnat_priv->data->whnat &&						\

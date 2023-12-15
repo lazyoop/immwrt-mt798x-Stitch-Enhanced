@@ -416,6 +416,26 @@ define Device/BPI-R3MINI-NAND
 endef
 TARGET_DEVICES += BPI-R3MINI-NAND
 
+define Device/BPI-R3MINI-NAND-110M
+  DEVICE_VENDOR := Banana Pi
+  DEVICE_MODEL := Banana Pi R3MINI
+  DEVICE_TITLE := MTK7986a BPI R3MINI NAND 110M Layout
+  DEVICE_DTS := mt7986a-bananapi-bpi-r3mini-nand-110m
+  DEVICE_DTS_DIR := $(DTS_DIR)/mediatek
+  DEVICE_PACKAGES := $(MT7986_USB_PKGS) $(MT7986_WWAN_PKGS) \
+        kmod-phy-air-en8811h bpir3_mini-properties pciutils
+  SUPPORTED_DEVICES := bananapi,bpi-r3mini
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 110592k
+  KERNEL_IN_UBI := 1
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += BPI-R3MINI-NAND-110M
+
 define Device/BPI-R3MINI-EMMC
   DEVICE_VENDOR := Banana Pi
   DEVICE_MODEL := Banana Pi R3MINI
@@ -429,6 +449,18 @@ define Device/BPI-R3MINI-EMMC
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += BPI-R3MINI-EMMC
+
+define Device/jdcloud_re-cp-03
+  DEVICE_VENDOR := JDCloud
+  DEVICE_MODEL := RE-CP-03
+  DEVICE_DTS := mt7986a-jdcloud-re-cp-03
+  DEVICE_DTS_DIR := $(DTS_DIR)/mediatek
+  SUPPORTED_DEVICES := jdcloud,re-cp-03
+  DEVICE_PACKAGES := blkid blockdev fdisk f2fsck mkf2fs losetup \
+	kmod-mmc kmod-nls-cp437 kmod-nls-iso8859-1
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += jdcloud_re-cp-03
 
 define Device/netcore_n60
   DEVICE_VENDOR := Netcore
