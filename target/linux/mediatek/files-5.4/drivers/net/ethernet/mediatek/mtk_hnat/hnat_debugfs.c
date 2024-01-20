@@ -1436,6 +1436,30 @@ int __hnat_entry_read(struct seq_file *m, void *private, u32 ppe_id)
 	return 0;
 }
 
+static int hnat_stats_read(struct seq_file *m, void *private)
+{
+	struct mtk_hnat *h = hnat_priv;
+	struct foe_entry *entry, *end;
+	int cnt, i;
+
+	seq_printf(m, "PPE_NUM=%d\n", CFG_PPE_NUM);
+
+	for (i = 0; i < CFG_PPE_NUM; i++) {
+		cnt = 0;
+		entry = h->foe_table_cpu[i];
+		end = h->foe_table_cpu[i] + hnat_priv->foe_etry_num;
+		while (entry < end) {
+			if (entry->bfib1.state == dbg_entry_state)
+				cnt++;
+			entry++;
+		}
+		seq_printf(m, "ALL_PPE%d=%d\n", i, hnat_priv->foe_etry_num);
+		seq_printf(m, "BIND_PPE%d=%d\n", i, cnt);
+	}
+
+	return 0;
+}
+
 int hnat_entry_read(struct seq_file *m, void *private)
 {
 	int i;
@@ -1509,6 +1533,18 @@ static const struct file_operations hnat_entry_fops = {
 	.read = seq_read,
 	.llseek = seq_lseek,
 	.write = hnat_entry_write,
+	.release = single_release,
+};
+
+static int hnat_stats_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, hnat_stats_read, file->private_data);
+}
+
+static const struct file_operations hnat_stats_fops = {
+	.open = hnat_stats_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
 	.release = single_release,
 };
 
@@ -1696,8 +1732,8 @@ static int hnat_ext_show(struct seq_file *m, void *private)
 	for (i = 0; i < MAX_EXT_DEVS && hnat_priv->ext_if[i]; i++) {
 		ext_entry = hnat_priv->ext_if[i];
 		if (ext_entry->dev)
-			seq_printf(m, "ext devices [%d] = %s  (dev=%p, ifindex=%d)\n",
-				   i, ext_entry->name, ext_entry->dev,
+			seq_printf(m, "ext devices [%d] = %s,  (dev=%p, ifindex=%d)\n",
+				   i, ext_entry->dev->name, ext_entry->dev,
 				   ext_entry->dev->ifindex);
 	}
 
@@ -2173,6 +2209,7 @@ void hnat_qos_shaper_ebl(u32 id, u32 enable)
 	struct mtk_hnat *h = hnat_priv;
 	u32 cfg;
 
+	cr_set_field(h->fe_base + QDMA_PAGE, QTX_CFG_PAGE, (id / NUM_OF_Q_PER_PAGE));
 	if (enable) {
 		cfg = QTX_SCH_MIN_RATE_EN | QTX_SCH_MAX_RATE_EN;
 		cfg |= (1 << QTX_SCH_MIN_RATE_MAN_OFFSET) |
@@ -2421,6 +2458,8 @@ int hnat_init_debugfs(struct mtk_hnat *h)
 			    &cpu_reason_fops);
 	debugfs_create_file("hnat_entry", S_IRUGO | S_IRUGO, root, h,
 			    &hnat_entry_fops);
+	debugfs_create_file("hnat_stats", S_IRUGO | S_IRUGO, root, h,
+			    &hnat_stats_fops);
 	debugfs_create_file("hnat_setting", S_IRUGO | S_IRUGO, root, h,
 			    &hnat_setting_fops);
 	debugfs_create_file("mcast_table", S_IRUGO | S_IRUGO, root, h,

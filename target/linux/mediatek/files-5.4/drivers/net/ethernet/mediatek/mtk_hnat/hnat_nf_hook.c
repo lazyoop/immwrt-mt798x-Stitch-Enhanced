@@ -121,20 +121,70 @@ static inline struct net_device *get_wandev_from_index(int index)
 	return NULL;
 }
 
-static inline int extif_set_dev(struct net_device *dev)
+static inline int extif_match(const char *name)
 {
 	int i;
 	struct extdev_entry *ext_entry;
 
 	for (i = 0; i < MAX_EXT_DEVS && hnat_priv->ext_if[i]; i++) {
 		ext_entry = hnat_priv->ext_if[i];
-		if (!strcmp(dev->name, ext_entry->name) && !ext_entry->dev) {
+		if (!strcmp(name, ext_entry->name) && !ext_entry->dev) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+static inline bool extif_prefix_match(const char *name)
+{
+	int i;
+
+	for (i = 0; i < MAX_EXT_PREFIX_NUM && hnat_priv->ext_if_prefix[i]; i++)
+	{
+		if (strlen(hnat_priv->ext_if_prefix[i]) && 
+			!strncmp(name, hnat_priv->ext_if_prefix[i],
+				strlen(hnat_priv->ext_if_prefix[i])))
+			return true;
+	}
+
+	return false;
+}
+
+static inline int extif_set_dev(struct net_device *dev, int try_prefix)
+{
+	struct extdev_entry *ext_entry;
+	int extif_index, number;
+
+	extif_index = extif_match(dev->name);
+
+	if (extif_index < 0) {
+		/* try extif prefix match */
+		if (try_prefix && extif_prefix_match(dev->name)) {
+			number = get_ext_device_number();
+			if (number >= MAX_EXT_DEVS) {
+				pr_info("%s : extdev array is full. %s is not registered\n",
+					__func__, dev->name);
+				return -1;
+			}
+
+			ext_entry = kzalloc(sizeof(*ext_entry), GFP_KERNEL);
+			if (!ext_entry)
+				return -1;
+
+			strncpy(ext_entry->name, dev->name, IFNAMSIZ - 1);
 			dev_hold(dev);
 			ext_entry->dev = dev;
-			pr_info("%s(%s)\n", __func__, dev->name);
+			ext_if_add(ext_entry);
 
-			return ext_entry->dev->ifindex;
+			pr_info("%s prefix match (%s)\n", __func__, dev->name);
+			return dev->ifindex;
 		}
+	} else {
+		dev_hold(dev);
+		hnat_priv->ext_if[extif_index]->dev = dev;
+		pr_info("%s(%s)\n", __func__, dev->name);
+		return dev->ifindex;
 	}
 
 	return -1;
@@ -239,7 +289,7 @@ int nf_hnat_netdevice_event(struct notifier_block *unused, unsigned long event,
 
 		gmac_ppe_fwd_enable(dev);
 
-		extif_set_dev(dev);
+		extif_set_dev(dev, 1);
 
 		break;
 	case NETDEV_GOING_DOWN:
@@ -295,7 +345,8 @@ void foe_clear_entry(struct neighbour *neigh)
 		for (hash_index = 0; hash_index < hnat_priv->foe_etry_num; hash_index++) {
 			entry = hnat_priv->foe_table_cpu[i] + hash_index;
 			if (entry->bfib1.state == BIND &&
-			    entry->ipv4_hnapt.new_dip == ntohl(dip)) {
+			    entry->ipv4_hnapt.new_dip == ntohl(dip) &&
+			    IS_IPV4_HNAPT(entry)) {
 				*((u32 *)h_dest) = swab32(entry->ipv4_hnapt.dmac_hi);
 				*((u16 *)&h_dest[4]) =
 					swab16(entry->ipv4_hnapt.dmac_lo);
@@ -400,9 +451,7 @@ unsigned int do_hnat_ext_to_ge(struct sk_buff *skb, const struct net_device *in,
 		}
 
 		/*set where we come from*/
-		skb->vlan_proto = htons(ETH_P_8021Q);
-		skb->vlan_tci =
-			(VLAN_CFI_MASK | (in->ifindex & VLAN_VID_MASK));
+		__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), in->ifindex & VLAN_VID_MASK);
 		trace_printk(
 			"%s: vlan_prot=0x%x, vlan_tci=%x, in->name=%s, skb->dev->name=%s\n",
 			__func__, ntohs(skb->vlan_proto), skb->vlan_tci,
@@ -433,7 +482,7 @@ unsigned int do_hnat_ext_to_ge2(struct sk_buff *skb, const char *func)
 		skb->dev = dev;
 		skb->vlan_proto = 0;
 		skb->vlan_tci = 0;
-
+		__vlan_hwaccel_clear_tag(skb);
 		if (ntohs(eth->h_proto) == ETH_P_8021Q) {
 			skb = skb_vlan_untag(skb);
 			if (unlikely(!skb))
@@ -808,6 +857,11 @@ mtk_hnat_ipv6_nf_pre_routing(void *priv, struct sk_buff *skb,
 	if (!skb)
 		goto drop;
 
+	if (!IS_WHNAT(state->in) && IS_EXT(state->in) && IS_SPACE_AVAILABLE_HEAD(skb)) {
+		skb_hnat_alg(skb) = 0;
+		skb_hnat_magic_tag(skb) = HNAT_MAGIC_TAG;
+	}
+
 	if (!is_magic_tag_valid(skb))
 		return NF_ACCEPT;
 
@@ -876,6 +930,11 @@ mtk_hnat_ipv4_nf_pre_routing(void *priv, struct sk_buff *skb,
 	if (!skb)
 		goto drop;
 
+	if (!IS_WHNAT(state->in) && IS_EXT(state->in) && IS_SPACE_AVAILABLE_HEAD(skb)) {
+		skb_hnat_alg(skb) = 0;
+		skb_hnat_magic_tag(skb) = HNAT_MAGIC_TAG;
+	}
+
 	if (!is_magic_tag_valid(skb))
 		return NF_ACCEPT;
 
@@ -933,6 +992,11 @@ mtk_hnat_br_nf_local_in(void *priv, struct sk_buff *skb,
 
 	if (!skb)
 		goto drop;
+
+	if (!IS_WHNAT(state->in) && IS_EXT(state->in) && IS_SPACE_AVAILABLE_HEAD(skb)) {
+		skb_hnat_alg(skb) = 0;
+		skb_hnat_magic_tag(skb) = HNAT_MAGIC_TAG;
+	}
 
 	if (!is_magic_tag_valid(skb))
 		return NF_ACCEPT;
@@ -1235,6 +1299,9 @@ static unsigned int skb_to_hnat_info(struct sk_buff *skb,
 
 	entry.bfib1.pkt_type = foe->udib1.pkt_type; /* Get packte type state*/
 	entry.bfib1.state = foe->udib1.state;
+
+	if (unlikely(entry.bfib1.state != UNBIND))
+		return 0;
 
 #if defined(CONFIG_MEDIATEK_NETSYS_V2)
 	entry.bfib1.sp = foe->udib1.sp;
@@ -1605,7 +1672,7 @@ static unsigned int skb_to_hnat_info(struct sk_buff *skb,
 				gmac = (IS_GMAC1_MODE) ? NR_GMAC1_PORT : NR_GMAC2_PORT;
 		}
 	} else if (IS_EXT(dev) && (FROM_GE_PPD(skb) || FROM_GE_LAN(skb) ||
-		   FROM_GE_WAN(skb) || FROM_GE_VIRTUAL(skb) || FROM_WED(skb))) {
+		   FROM_GE_WAN(skb) || FROM_GE_VIRTUAL(skb) || FROM_WED(skb) || FROM_EXT(skb))) {
 		if (!hnat_priv->data->whnat && IS_GMAC1_MODE) {
 			entry.bfib1.vpm = 1;
 			entry.bfib1.vlan_layer = 1;
@@ -1947,7 +2014,7 @@ void mtk_ppe_dev_register_hook(struct net_device *dev)
 	for (i = 1; i < MAX_IF_NUM; i++) {
 		if (!hnat_priv->wifi_hook_if[i]) {
 			if (find_extif_from_devname(dev->name)) {
-				extif_set_dev(dev);
+				extif_set_dev(dev, 0);
 				goto add_wifi_hook_if;
 			}
 
@@ -2111,6 +2178,9 @@ static unsigned int mtk_hnat_nf_post_routing(
 
 	if (!IS_LAN(out) && !IS_WAN(out) && !IS_EXT(out))
 		return 0;
+
+	//if (!IS_WHNAT(out) && IS_EXT(out) && FROM_WED(skb))
+	//	return 0;
 
 	trace_printk("[%s] case hit, %x-->%s, reason=%x\n", __func__,
 		     skb_hnat_iface(skb), out->name, skb_hnat_reason(skb));

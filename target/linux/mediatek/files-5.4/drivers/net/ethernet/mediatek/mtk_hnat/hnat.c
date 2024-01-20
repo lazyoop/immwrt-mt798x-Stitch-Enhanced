@@ -42,7 +42,7 @@ EXPORT_SYMBOL(ppe_dev_register_hook);
 void (*ppe_dev_unregister_hook)(struct net_device *dev) = NULL;
 EXPORT_SYMBOL(ppe_dev_unregister_hook);
 
-static int ppe_cnt = 1;
+static int ppe_cnt = 2;
 module_param(ppe_cnt, int, 0);
 
 static void hnat_sma_build_entry(struct timer_list *t)
@@ -762,6 +762,7 @@ static int hnat_probe(struct platform_device *pdev)
 	if (err)
 		return err;
 
+	index = 0;
 	prop = of_find_property(np, "ext-devices", NULL);
 	for (name = of_prop_next_string(prop, NULL); name;
 	     name = of_prop_next_string(prop, name), index++) {
@@ -777,6 +778,20 @@ static int hnat_probe(struct platform_device *pdev)
 	for (i = 0; i < MAX_EXT_DEVS && hnat_priv->ext_if[i]; i++) {
 		ext_entry = hnat_priv->ext_if[i];
 		dev_info(&pdev->dev, "ext devices = %s\n", ext_entry->name);
+	}
+
+	index = 0;
+	prop = of_find_property(np, "ext-devices-prefix", NULL);
+	for (name = of_prop_next_string(prop, NULL); name;
+	     name = of_prop_next_string(prop, name), index++) {
+		if (index < MAX_EXT_PREFIX_NUM)
+			hnat_priv->ext_if_prefix[index] = name;
+		else
+			break;
+	}
+
+	for (i = 0; i < MAX_EXT_PREFIX_NUM && hnat_priv->ext_if_prefix[i]; i++) {
+		dev_info(&pdev->dev, "ext device prefix = %s\n", hnat_priv->ext_if_prefix[i]);
 	}
 
 	hnat_priv->lvid = 1;

@@ -34,6 +34,7 @@ MT7986_whnat()
 	PCIe0=
 	eth_tx=229
 	eth_rx0=230
+	usb=205
 	if [ -d "/proc/warp_ctrl/warp0" ]; then
 	wifi1_irq=237
 	wifi2_irq=237
@@ -51,7 +52,7 @@ MT7986_whnat()
 	if [ "$num_of_wifi" = "0" ]; then
 		CPU0_AFFINITY="$eth_rx0"
 		CPU1_AFFINITY="$eth_tx"
-		CPU2_AFFINITY=""
+		CPU2_AFFINITY="$usb"
 		CPU3_AFFINITY=""
 
 		CPU0_RPS=""
@@ -61,7 +62,7 @@ MT7986_whnat()
 	elif [ "$num_of_wifi" = "1" ]; then
 		CPU0_AFFINITY="$eth_rx0"
 		CPU1_AFFINITY="$eth_tx"
-		CPU2_AFFINITY=""
+		CPU2_AFFINITY="$usb"
 		CPU3_AFFINITY="$wifi1_irq"
 
 		CPU0_RPS="                $wifi1 $wifi1_apcli0"
@@ -71,7 +72,7 @@ MT7986_whnat()
 	elif [ "$num_of_wifi" = "2" ]; then
 		CPU0_AFFINITY="$eth_rx0"
 		CPU1_AFFINITY="$eth_tx"
-		CPU2_AFFINITY=""
+		CPU2_AFFINITY="$usb"
 		CPU3_AFFINITY="$wifi1_irq $wifi2_irq"
 
 		CPU0_RPS="                $wifi1 $wifi2 $wifi1_apcli0 $wifi2_apcli0"
@@ -81,7 +82,7 @@ MT7986_whnat()
 	elif [ "$num_of_wifi" = "3" ]; then
 		CPU0_AFFINITY="$eth_tx $eth_rx0"
 		CPU1_AFFINITY="$wifi1_irq $wifi2_irq"
-		CPU2_AFFINITY="$PCIe0 $wifi3_irq"
+		CPU2_AFFINITY="$PCIe0 $wifi3_irq $usb"
 		CPU3_AFFINITY=""
 
 		CPU0_RPS=""
@@ -203,13 +204,14 @@ MT7986_dbdc1()
 MT7981_whnat()
 {
 	num_of_wifi=$1
-	storage=$2
+	is_usbnet=$2
 	DEFAULT_RPS=0
 
 	#Physical IRQ# setting
 	PCIe0=
 	eth_tx=229
 	eth_rx0=230
+	usb=205
 	if [ -d "/proc/warp_ctrl/warp0" ]; then
 		wifi1_irq=237
 		wifi2_irq=237
@@ -226,25 +228,26 @@ MT7981_whnat()
 	dbg "[MT7981_whnat]"
 	if [ "$num_of_wifi" = "0" ]; then
 		CPU0_AFFINITY="$eth_rx0"
-		CPU1_AFFINITY="$eth_tx"
+		CPU1_AFFINITY="$eth_tx $usb"
 
 		CPU0_RPS=""
 		CPU1_RPS="$ethif1 $ethif2"
 	elif [ "$num_of_wifi" = "1" ]; then
 		CPU0_AFFINITY="$eth_tx $eth_rx0"
-		CPU1_AFFINITY="$wifi1_irq"
+		CPU1_AFFINITY="$wifi1_irq $usb"
 
 		CPU0_RPS="$ethif1 $ethif2 $wifi1 $wifi1_apcli0"
 		CPU1_RPS="                $wifi1 $wifi1_apcli0"
 	elif [ "$num_of_wifi" = "2" ]; then
 		CPU0_AFFINITY="$eth_tx $eth_rx0"
-		CPU1_AFFINITY="$wifi1_irq $wifi2_irq"
+		CPU1_AFFINITY="$wifi1_irq $wifi2_irq $usb"
 
 		CPU0_RPS="$ethif1 $ethif2 $wifi1 $wifi2 $wifi1_apcli0 $wifi2_apcli0"
 		CPU1_RPS="                $wifi1 $wifi2 $wifi1_apcli0 $wifi2_apcli0"
+		[ "$is_usbnet" = "1" ] && CPU1_RPS="$wifi1_apcli0 $wifi2_apcli0"
 	elif [ "$num_of_wifi" = "3" ]; then
 		CPU0_AFFINITY="$eth_tx $eth_rx0"
-		CPU1_AFFINITY="$PCIe0 $wifi1_irq $wifi2_irq $wifi3_irq"
+		CPU1_AFFINITY="$PCIe0 $wifi1_irq $wifi2_irq $wifi3_irq $usb"
 
 		CPU0_RPS="$ethif1 $ethif2 $wifi1 $wifi2 $wifi3 $wifi1_apcli0 $wifi2_apcli0 $wifi3_apcli0"
 		CPU1_RPS="                $wifi1 $wifi2 $wifi3 $wifi1_apcli0 $wifi2_apcli0 $wifi3_apcli0"
@@ -667,6 +670,24 @@ scan_wifi_num()
 	dbg "# NUM_OF_WIFI=$NUM_OF_WIFI band(s)"
 }
 
+scan_usbnet()
+{
+	for dev in /sys/class/net/*; do
+		[ -d "$dev" ] || continue
+		dev_name=$(basename $dev)
+		dev_prefix="${dev_name%%[0-9]*}"
+		if [ "$dev_prefix" = "usb" ] || [ "$dev_prefix" = "wwan" ]; then
+			IS_USBNET=1
+			return
+		fi
+	done
+}
+
+get_usbnet()
+{
+	echo $IS_USBNET
+}
+
 get_wifi_num()
 {
 	echo $NUM_OF_WIFI
@@ -707,6 +728,9 @@ setup_model()
 	board=$(board_name)
 	num_of_wifi=$(get_wifi_num)
 	mt_whnat_en=$(module_exist "mt_whnat")
+	usbnet=$(get_usbnet)
+
+	logger -t "mtk_smp" "board=${board}, wifi_num=${num_of_wifi}, cpu_num=${NUM_OF_CPU}, usbnet=${usbnet}"
 
 	case $board in
 	xiaomi,redmi-router-ax6000* |\
@@ -716,7 +740,7 @@ setup_model()
 	jdcloud,re-cp-03 |\
 	tplink,tl-xdr608* |\
 	*7986*)
-		MT7986_whnat $num_of_wifi
+		MT7986_whnat $num_of_wifi $usbnet
 		;;
 	*mt3000* |\
 	glinet,x3000-emmc |\
@@ -734,7 +758,7 @@ setup_model()
 	konka,komi-a31 |\
 	nradio,wt9103 |\
 	*7981*)
-		MT7981_whnat $num_of_wifi
+		MT7981_whnat $num_of_wifi $usbnet
 		;;
 	*)
 		if [ "$NUM_OF_CPU" = "4" ]; then
@@ -826,7 +850,7 @@ set_smp_affinity()
 			cpu_bit=$((2 ** $num))
 			virq=$(get_virtual_irq $i)
 			dbg2 "irq p2v $i --> $virq"
-			if [ ! -z $virq ]; then
+			if [ ! -z $virq ] && [ -d /proc/irq/$virq ]; then
 				dbg "echo $cpu_bit > /proc/irq/$virq/smp_affinity"
 				echo $cpu_bit > /proc/irq/$virq/smp_affinity
 			fi
@@ -869,6 +893,8 @@ RPS_IF_LIST=""	# setup by getEthIfName/getWiFiIfName/every model
 get_eth_if_name
 get_wifi_if_name	# It will add all wifi interfaces into $RPS_IF_LIST
 dbg2 "# default RPS_IF_LIST=$RPS_IF_LIST"
+IS_USBNET=0
+scan_usbnet
 setup_model
 set_rps_cpu_bitmap
 set_rps_cpus $DEFAULT_RPS
