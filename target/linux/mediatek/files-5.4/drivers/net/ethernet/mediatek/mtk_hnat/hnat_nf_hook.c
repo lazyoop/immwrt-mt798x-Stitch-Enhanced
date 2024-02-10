@@ -1651,9 +1651,6 @@ static unsigned int skb_to_hnat_info(struct sk_buff *skb,
 			gmac = ((skb_hnat_entry(skb) >> 1) % hnat_priv->gmac_num) ?
 				 NR_GMAC2_PORT : NR_GMAC1_PORT;
 		else {
-			if (of_machine_is_compatible("glinet,mt2500-emmc")||of_machine_is_compatible("glinet,mt3000-snand"))
-				gmac = NR_GMAC2_PORT;
-			else
 				gmac = NR_GMAC1_PORT;
 		}
 	} else if (IS_WAN(dev)) {
@@ -1666,9 +1663,6 @@ static unsigned int skb_to_hnat_info(struct sk_buff *skb,
 			/* Set act_dp = wan_dev */
 			entry.ipv4_hnapt.act_dp = dev->ifindex;
 		} else {
-			if (of_machine_is_compatible("glinet,mt2500-emmc")||of_machine_is_compatible("glinet,mt3000-snand"))
-				gmac = NR_GMAC1_PORT;
-			else
 				gmac = (IS_GMAC1_MODE) ? NR_GMAC1_PORT : NR_GMAC2_PORT;
 		}
 	} else if (IS_EXT(dev) && (FROM_GE_PPD(skb) || FROM_GE_LAN(skb) ||
@@ -2179,8 +2173,10 @@ static unsigned int mtk_hnat_nf_post_routing(
 	if (!IS_LAN(out) && !IS_WAN(out) && !IS_EXT(out))
 		return 0;
 
-	//if (!IS_WHNAT(out) && IS_EXT(out) && FROM_WED(skb))
-	//	return 0;
+#if defined(CONFIG_MEDIATEK_NETSYS_RX_V2)
+	if (!IS_WHNAT(out) && IS_EXT(out) && FROM_WED(skb))
+		return 0;
+#endif
 
 	trace_printk("[%s] case hit, %x-->%s, reason=%x\n", __func__,
 		     skb_hnat_iface(skb), out->name, skb_hnat_reason(skb));
