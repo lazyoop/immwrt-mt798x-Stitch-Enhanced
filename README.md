@@ -9,6 +9,7 @@ Default login address: http://192.168.1.1 or http://immortalwrt.lan, username: _
 
 ## About immortalwrt-mt798x 
 - https://cmi.hanwckf.top/p/immortalwrt-mt798x/
+- 使用前要看快速开始
 
 ## Development
 To build your own firmware you need a GNU/Linux, BSD or MacOSX system (case sensitive filesystem required). Cygwin is unsupported because of the lack of a case sensitive file system.<br/>
@@ -51,9 +52,14 @@ To build your own firmware you need a GNU/Linux, BSD or MacOSX system (case sens
   ### Quickstart
   1. Run `git clone --depth=1 https://github.com/hanwckf/immortalwrt-mt798x.git` to clone the source code.
   2. Run `cd immortalwrt-mt798x` to enter source directory.
-  3. Run `./scripts/feeds update -a` to obtain all the latest package definitions defined in feeds.conf / feeds.conf.default
-  4. Run `./scripts/feeds install -a` to install symlinks for all obtained packages into package/feeds/
-  5. Copy the configuration file for your device from the `defconfig` directory to the project root directory and rename it `.config`
+  3. You can either use the default feed or select the appropriate feed from the `otherfeeds` folder and need to rename it `feeds.conf`
+     ```
+     cp -a otherfeeds/immwrt.conf feeds.conf
+     
+     ```
+  4. Run `./scripts/feeds update -a` to obtain all the latest package definitions defined in feeds.conf / feeds.conf.default
+  5. Run `./scripts/feeds install -a` to install symlinks for all obtained packages into package/feeds/
+  6. Copy the configuration file for your device from the `defconfig` directory to the project root directory and rename it `.config`
      
      ```
      # MT7981
