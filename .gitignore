@@ -30,6 +30,8 @@ git-src
 .cproject
 .ccache
 .vscode
+/.idea/
+feeds.conf
 
 !/dl/datconf*
 !/dl/mt798*
