@@ -34,5 +34,5 @@ git-src
 feeds.conf
 
 !/dl/datconf*
-!/dl/mt798*
+!/dl/mt79*
 !/dl/warp*
