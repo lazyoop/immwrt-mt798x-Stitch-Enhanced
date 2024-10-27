@@ -26,7 +26,7 @@ tools-y += e2fsprogs fakeroot findutils firmware-utils flex gengetopt
 tools-y += libressl libtool lzma m4 make-ext4fs missing-macros mkimage
 tools-y += mklibs mm-macros mtd-utils mtools ninja padjffs2 patch-image
 tools-y += patchelf pkgconf quilt squashfskit4 sstrip zip zlib zstd
-tools-y += crc32sum libdeflate
+tools-y += crc32sum
 tools-$(BUILD_B43_TOOLS) += b43-tools
 tools-$(BUILD_ISL) += isl
 tools-$(BUILD_TOOLCHAIN) += expat gmp libelf mpc mpfr
@@ -56,7 +56,6 @@ $(curdir)/gengetopt/compile := $(curdir)/libtool/compile
 $(curdir)/gmp/compile := $(curdir)/libtool/compile
 $(curdir)/gptfdisk/compile += $(curdir)/e2fsprogs/compile $(curdir)/popt/compile
 $(curdir)/isl/compile := $(curdir)/gmp/compile
-$(curdir)/libdeflate/compile := $(curdir)/cmake/compile
 $(curdir)/libelf/compile := $(curdir)/libtool/compile
 $(curdir)/libressl/compile := $(curdir)/pkgconf/compile
 $(curdir)/libtool/compile := $(curdir)/m4/compile $(curdir)/autoconf/compile $(curdir)/automake/compile $(curdir)/missing-macros/compile
@@ -96,7 +95,7 @@ $(foreach tool, $(tools-y), $(if $(wildcard $(curdir)/$(tool)/patches),$(eval $(
 $(foreach tool, $(filter-out xz,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/xz/compile))
 
 # make any tool depend on tar, xz and patch to ensure that archives can be unpacked and patched properly
-tools-core := tar xz patch
+tools-core := libdeflate tar xz patch
 
 $(foreach tool, $(tools-y), $(eval $(curdir)/$(tool)/compile += $(patsubst %,$(curdir)/%/compile,$(tools-core))))
 tools-y += $(tools-core)
