@@ -1,0 +1,48 @@
+#!/bin/sh
+
+# set wifi
+init_password() {
+
+  local key
+  local encryption
+  local  idx
+  local band
+  key="password"
+  encryption="psk2"
+
+	if [ -d "/sys/module/mt_wifi" ]; then
+		dev_list="$(l1util list)"
+		for dev in $dev_list; do
+			config_get type ${dev} type
+			[ "$type" = "mtwifi" ] || {
+
+				idx="$(l1util get ${dev} subidx)"
+				band="$(l1util get ${dev} band)"
+
+				if [ -z "$band" ] || [ "$band" = "nil" ]; then
+					[ $idx -eq 1 ] && band="2g" || band="5g"
+				fi
+
+				if [ "$band" = "2g" ]; then
+					ssid="FamilyROS-2.4G"
+				elif [ "$band" = "5g" ]; then
+					ssid="FamilyROS-5G"
+				elif [ "$band" = "6g" ]; then
+					ssid="FamilyROS-6G"
+				fi
+
+				uci -q batch <<-EOF
+					set wireless.default_${dev}.ssid=${ssid}
+					set wireless.default_${dev}.encryption=$encryption
+					set wireless.default_${dev}.key=$key
+EOF
+				uci -q commit wireless
+			}
+		done
+	fi
+
+}
+
+init_password
+exit 0
+
