@@ -15,7 +15,7 @@ Default login address: http://192.168.1.1 or http://immortalwrt.lan, username: _
 To build your own firmware you need a GNU/Linux, BSD or MacOSX system (case sensitive filesystem required). Cygwin is unsupported because of the lack of a case sensitive file system.<br/>
 
   ### Requirements
-  To build with this project, Ubuntu 20.04 LTS is preferred. And you need use the CPU based on AMD64 architecture, with at least 4GB RAM and 25 GB available disk space. Make sure the __Internet__ is accessible.
+  To build with this project, `Debian12` is preferred. And you need use the CPU based on AMD64 architecture, with at least 4GB RAM and 25 GB available disk space. Make sure the __Internet__ is accessible.
 
   The following tools are needed to compile ImmortalWrt, the package names vary between distributions.
 
