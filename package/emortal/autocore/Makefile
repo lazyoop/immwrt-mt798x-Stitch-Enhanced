@@ -52,7 +52,7 @@ ifeq ($(filter ipq%, $(TARGETID)),)
 	$(INSTALL_BIN) ./files/generic/ethinfo $(1)/sbin/
 
 	$(INSTALL_DIR) $(1)/www/luci-static/resources/view/status/include
-	$(INSTALL_DATA) ./files/generic/21_ethinfo.js $(1)/www/luci-static/resources/view/status/include/
+	$(INSTALL_DATA) ./files/generic/28_ethinfo.js $(1)/www/luci-static/resources/view/status/include/
 endif
 endef
 
