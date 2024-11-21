@@ -37,7 +37,7 @@ function formatSpeed(speed) {
 
 function getPortColor(link, duplex) {
   if (!link) return 'background-color: whitesmoke;';
-  const color = duplex == 'full' || duplex ? 'greenyellow' : 'darkorange';
+  const color = duplex == 'full' || duplex ? 'rgb(40,140,111)' : 'rgb(162,123,60)';
   return 'background-color: ' + color;
 }
 
