@@ -7,9 +7,23 @@ Compared the official one, we allow to use hacks or non-upstreamable patches / m
 
 Default login address: http://192.168.1.1 or http://immortalwrt.lan, username: __root__, password: _none_.
 
-## About immortalwrt-mt798x 
-- https://cmi.hanwckf.top/p/immortalwrt-mt798x/
-- 使用前要看快速开始
+## About immwrt-mt798x-Stitch-Enhanced 
+- Based on the HANWCKF's immortalwrt-mt798x library
+- Look at Quick Start before you use it
+- Default settings:
+  ```
+  System:
+  
+    username: root
+    password: password
+  
+  WIFI:
+  
+    name: FamilyROS -2G OR -5G OR -6G
+    encryption: PSK2
+    password: password
+    
+  ```
 
 ## Development
 To build your own firmware you need a GNU/Linux, BSD or MacOSX system (case sensitive filesystem required). Cygwin is unsupported because of the lack of a case sensitive file system.<br/>
@@ -19,7 +33,7 @@ To build your own firmware you need a GNU/Linux, BSD or MacOSX system (case sens
 
   The following tools are needed to compile ImmortalWrt, the package names vary between distributions.
 
-  - Here is an example for Ubuntu users:<br/>
+  - Here is an example for `Debian12` users:<br/>
     - Method 1:
       <details>
         <summary>Setup dependencies via APT</summary>
@@ -36,10 +50,6 @@ To build your own firmware you need a GNU/Linux, BSD or MacOSX system (case sens
           texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev libfuse-dev
         ```
       </details>
-    - Method 2:
-      ```bash
-      sudo bash -c 'bash <(curl -sL https://build-scripts.immortalwrt.eu.org/init_build_environment.sh)'
-      ```
 
   Note:
   - Do everything as an unprivileged user, not root, without sudo.
@@ -50,10 +60,12 @@ To build your own firmware you need a GNU/Linux, BSD or MacOSX system (case sens
   - For more details, please see [Build system setup](https://openwrt.org/docs/guide-developer/build-system/install-buildsystem) documentation.
 
   ### Quickstart
-  1. Run `git clone --depth=1 https://github.com/hanwckf/immortalwrt-mt798x.git` to clone the source code.
-  2. Run `cd immortalwrt-mt798x` to enter source directory.
+  1. Run `git clone --depth=1 https://github.com/lazyoop/immwrt-mt798x-Stitch-Enhanced.git` to clone the source code.
+  2. Run `cd immwrt-mt798x-Stitch-Enhanced` to enter source directory.
   3. You can either use the default feed or select the appropriate feed from the `otherfeeds` folder and need to rename it `feeds.conf`
      ```
+     # example:
+     
      cp -a otherfeeds/immwrt.conf feeds.conf
      
      ```
@@ -73,6 +85,9 @@ To build your own firmware you need a GNU/Linux, BSD or MacOSX system (case sens
      ```
      
   7. Run `make menuconfig` to select your preferred configuration for the toolchain, target system & firmware packages.
+     - Note:
+       - GCC11 is recommended, versions lower than GCC10 may affect the build.
+
   8. Run `make -j$(nproc)` to build your firmware. This will download all sources, build the cross-compile toolchain and then cross-compile the GNU/Linux kernel & all chosen applications for your target system.
 
   ### Related Repositories
