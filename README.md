@@ -5,7 +5,7 @@
 ImmortalWrt is a fork of [OpenWrt](https://openwrt.org), with more packages ported, more devices supported, better performance, and special optimizations for mainland China users.<br/>
 Compared the official one, we allow to use hacks or non-upstreamable patches / modifications to achieve our purpose. Source from anywhere.
 
-Default login address: http://192.168.1.1 or http://immortalwrt.lan, username: __root__, password: _none_.
+Default login address: http://192.168.1.1 or http://immortalwrt.lan
 
 ## About immwrt-mt798x-Stitch-Enhanced 
 - Based on the HANWCKF's immortalwrt-mt798x library
