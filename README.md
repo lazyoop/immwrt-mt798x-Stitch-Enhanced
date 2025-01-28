@@ -60,8 +60,8 @@ To build your own firmware you need a GNU/Linux, BSD or MacOSX system (case sens
   - For more details, please see [Build system setup](https://openwrt.org/docs/guide-developer/build-system/install-buildsystem) documentation.
 
   ### Quickstart
-  1. Run `git clone --depth=1 https://github.com/lazyoop/immwrt-mt798x-Stitch-Enhanced.git` to clone the source code.
-  2. Run `cd immwrt-mt798x-Stitch-Enhanced` to enter source directory.
+  1. Run `git clone --depth=1 https://github.com/lazyoop/mt798x-Hybrid-Enhanced.git` to clone the source code.
+  2. Run `cd mt798x-Hybrid-Enhanced` to enter source directory.
   3. You can either use the default feed or select the appropriate feed from the `otherfeeds` folder and need to rename it `feeds.conf`
      ```
      # example:
